@@ -15,6 +15,8 @@ public class BallMovement : MonoBehaviour
     Transform tr;
 
     Rigidbody2D rb;
+
+    public bool UseDeterministicBounce = false;
     // Start is called before the first frame update
     void Start()
     {
@@ -34,7 +36,15 @@ public class BallMovement : MonoBehaviour
         if(other.gameObject.CompareTag("Paddle"))
         {
             rb.velocity = Vector2.zero;
-            rb.AddForce(GetPaddleRandomBounce(), ForceMode2D.Impulse);
+            if(UseDeterministicBounce)
+            {
+                float percent = (other.GetContact(0).point.x - other.transform.position.x) / other.collider.bounds.extents.x;
+                rb.AddForce(GetPaddleDeterministicBounce(percent), ForceMode2D.Impulse);
+            }
+            else
+            {
+                rb.AddForce(GetPaddleRandomBounce(), ForceMode2D.Impulse);
+            }
         } else if(other.gameObject.CompareTag("Breakable"))
         {
             Destroy(other.gameObject);
@@ -44,6 +54,14 @@ public class BallMovement : MonoBehaviour
     Vector2 GetPaddleRandomBounce()
     {
         float angle = Random.Range(-PaddleBounceAngleRange, PaddleBounceAngleRange) + 90;
+        Vector2 newVelocity = new Vector2(Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad));
+        newVelocity *= StartingSpeed;
+        return newVelocity;
+    }
+
+    Vector2 GetPaddleDeterministicBounce(float percent)
+    {
+        float angle = 90 + PaddleBounceAngleRange * -percent;
         Vector2 newVelocity = new Vector2(Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad));
         newVelocity *= StartingSpeed;
         return newVelocity;
